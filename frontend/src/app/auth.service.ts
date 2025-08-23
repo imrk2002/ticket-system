@@ -36,5 +36,6 @@ export class AuthService {
 
   getToken(): string | null { return localStorage.getItem(this.tokenKey); }
   getRole(): 'ADMIN' | 'USER' | null { return (localStorage.getItem(this.roleKey) as any) || null; }
+  isAdmin(): boolean { return this.getRole() === 'ADMIN'; }
 }
 

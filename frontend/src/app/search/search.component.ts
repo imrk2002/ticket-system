@@ -6,6 +6,19 @@ import { ApiService } from '../api.service';
   selector: 'app-search',
   template: `
     <div class="card">
+      <div class="muted mb-8">Available Routes</div>
+      <table class="table" *ngIf="routes?.length">
+        <thead><tr><th>Origin</th><th>Destination</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let r of routes">
+            <td>{{r.origin}}</td>
+            <td>{{r.destination}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
       <div class="toolbar">
         <h3>Search Trips</h3>
         <div class="actions">
@@ -62,8 +75,13 @@ export class SearchComponent {
   date = new Date().toISOString().substring(0, 10);
   trips: any[] = [];
   error = '';
+  routes: any[] = [];
 
-  constructor(private api: ApiService, private router: Router) {}
+  constructor(private api: ApiService, private router: Router) { this.loadRoutes(); }
+
+  loadRoutes() {
+    this.api.listRoutes().subscribe({ next: (res) => this.routes = res || [] });
+  }
 
   search() {
     this.error = '';

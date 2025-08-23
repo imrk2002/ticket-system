@@ -14,7 +14,8 @@ import { AuthService } from './auth.service';
           <a routerLink="/" routerLinkActive="active">Search</a>
           <a routerLink="/history" routerLinkActive="active">History</a>
           <a routerLink="/admin" routerLinkActive="active">Admin</a>
-          <a routerLink="/login" routerLinkActive="active" *ngIf="!isAuthed">Login</a>
+          <a routerLink="/login" routerLinkActive="active" *ngIf="!isAuthed">User Login</a>
+          <a routerLink="/admin-login" routerLinkActive="active" *ngIf="!isAuthed">Admin Login</a>
           <button class="btn btn-secondary" (click)="toggleTheme()">Toggle Theme</button>
           <button class="btn btn-secondary" (click)="logout()" *ngIf="isAuthed">Logout</button>
         </div>

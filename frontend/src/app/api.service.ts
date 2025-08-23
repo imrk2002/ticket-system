@@ -12,6 +12,10 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
+  listRoutes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.scheduleBase}/routes`);
+  }
+
   searchTrips(origin: string, destination: string, date: string): Observable<any[]> {
     const params = new URLSearchParams({ origin, destination, date });
     return this.http.get<any[]>(`${this.scheduleBase}/trips/search?${params.toString()}`);
