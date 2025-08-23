@@ -77,5 +77,13 @@ export class SearchComponent {
   book(tripId: number) {
     this.router.navigate(['/book', tripId]);
   }
+
+  reset() {
+    this.origin = 'City A';
+    this.destination = 'City B';
+    this.date = new Date().toISOString().substring(0, 10);
+    this.trips = [];
+    this.error = '';
+  }
 }
 
