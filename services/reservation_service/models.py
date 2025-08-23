@@ -16,3 +16,13 @@ class Reservation(db.Model):
     status = db.Column(db.String(20), nullable=False, default="BOOKED")  # BOOKED/CANCELLED
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
+
+class User(db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="USER")  # ADMIN or USER
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+

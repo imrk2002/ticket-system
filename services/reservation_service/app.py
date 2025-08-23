@@ -1,12 +1,12 @@
 import os
 import time
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import requests
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-from models import db, Reservation
+from models import db, Reservation, User
 from sqlalchemy import text
 
 
@@ -18,6 +18,18 @@ def wait_for_db(retries: int = 30, delay_seconds: float = 2.0) -> None:
         except Exception:
             time.sleep(delay_seconds)
     db.session.execute(text("SELECT 1"))
+
+
+def seed_users() -> None:
+    from hashlib import sha256
+
+    if User.query.filter_by(username="admin").first() is None:
+        admin = User(username="admin", password_hash=sha256("Admin@123".encode()).hexdigest(), role="ADMIN")
+        db.session.add(admin)
+    if User.query.filter_by(username="user").first() is None:
+        usr = User(username="user", password_hash=sha256("User@123".encode()).hexdigest(), role="USER")
+        db.session.add(usr)
+    db.session.commit()
 
 
 def create_app() -> Flask:
@@ -32,6 +44,7 @@ def create_app() -> Flask:
         f"mysql+pymysql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["JWT_SECRET"] = os.environ.get("JWT_SECRET", "dev_secret_change_me")
 
     CORS(app)
     db.init_app(app)
@@ -39,6 +52,7 @@ def create_app() -> Flask:
     with app.app_context():
         wait_for_db()
         db.create_all()
+        seed_users()
 
     register_routes(app)
     return app
@@ -54,6 +68,26 @@ def register_routes(app: Flask) -> None:
             return jsonify({"status": "ok"})
         except Exception as exc:
             return jsonify({"status": "degraded", "error": str(exc)}), 500
+
+    @app.post("/auth/login")
+    def login() -> Any:
+        from hashlib import sha256
+        import jwt
+
+        data = request.get_json(force=True) or {}
+        username = str(data.get("username", "")).strip()
+        password = str(data.get("password", ""))
+        if not username or not password:
+            return jsonify({"error": "username and password required"}), 400
+
+        user: Optional[User] = User.query.filter_by(username=username).first()
+        if user is None:
+            return jsonify({"error": "invalid_credentials"}), 401
+        if user.password_hash != sha256(password.encode()).hexdigest():
+            return jsonify({"error": "invalid_credentials"}), 401
+
+        token = jwt.encode({"sub": user.username, "role": user.role}, app.config["JWT_SECRET"], algorithm="HS256")
+        return jsonify({"token": token, "role": user.role})
 
     @app.post("/reservations")
     def create_reservation() -> Any:
@@ -148,4 +182,3 @@ if __name__ == "__main__":
     app = create_app()
     port = int(os.environ.get("PORT", "5002"))
     app.run(host="0.0.0.0", port=port)
-

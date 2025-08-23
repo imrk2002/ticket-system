@@ -53,6 +53,7 @@ services:
       DB_NAME: reservation_db
       PORT: "5002"
       SCHEDULE_SERVICE_URL: http://bus-schedule:5001
+      JWT_SECRET: change_me_please
     depends_on:
       mysql:
         condition: service_healthy
