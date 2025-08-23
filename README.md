@@ -28,3 +28,6 @@ Run locally (no Docker)
 Notes
 - Seed data: Bus Schedule seeds a sample route/trip on first run.
 - Health endpoints: /health on both services.
+
+Deployment
+- See DEPLOYMENT.md for step-by-step deployment (Docker Compose and bare-metal).
