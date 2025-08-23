@@ -51,24 +51,40 @@ def create_app() -> Flask:
 def seed_if_empty() -> None:
     if Route.query.count() > 0:
         return
-    route_pairs = [
-        ("City A", "City B"),
-        ("City A", "City C"),
-        ("City B", "City C"),
+    # Popular Indian city routes
+    cities = [
+        "Mumbai", "Delhi", "Bengaluru", "Chennai", "Kolkata", "Hyderabad",
+        "Pune", "Ahmedabad", "Jaipur", "Surat", "Lucknow", "Kanpur",
+        "Nagpur", "Indore", "Bhopal", "Patna", "Vadodara", "Coimbatore",
+        "Kochi", "Visakhapatnam"
+    ]
+    # Curated city pairs (not all combinations to limit size)
+    pairs = [
+        ("Mumbai", "Pune"), ("Mumbai", "Ahmedabad"), ("Mumbai", "Surat"),
+        ("Delhi", "Jaipur"), ("Delhi", "Lucknow"), ("Delhi", "Kanpur"),
+        ("Bengaluru", "Chennai"), ("Bengaluru", "Hyderabad"), ("Bengaluru", "Coimbatore"),
+        ("Hyderabad", "Visakhapatnam"), ("Hyderabad", "Bhopal"),
+        ("Chennai", "Coimbatore"), ("Chennai", "Kochi"),
+        ("Kolkata", "Patna"), ("Kolkata", "Lucknow"),
+        ("Ahmedabad", "Vadodara"), ("Indore", "Bhopal"), ("Nagpur", "Bhopal"),
+        ("Pune", "Surat"), ("Jaipur", "Ahmedabad")
     ]
     now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
-    for origin, destination in route_pairs:
+    departures = [6, 10, 14, 18]  # hours
+    for origin, destination in pairs:
         route = Route(origin=origin, destination=destination)
         db.session.add(route)
         db.session.flush()
-        for h in [2, 6, 10]:
-            trip = Trip(
-                route_id=route.id,
-                departure_time=now + timedelta(hours=h),
-                seats_total=40,
-                seats_available=40,
-            )
-            db.session.add(trip)
+        # Create trips for today and tomorrow
+        for day_offset in [0, 1]:
+            for h in departures:
+                trip = Trip(
+                    route_id=route.id,
+                    departure_time=(now + timedelta(days=day_offset)).replace(hour=h),
+                    seats_total=44,
+                    seats_available=44,
+                )
+                db.session.add(trip)
     db.session.commit()
 
 

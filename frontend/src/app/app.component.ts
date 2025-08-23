@@ -15,6 +15,7 @@ import { AuthService } from './auth.service';
           <a routerLink="/history" routerLinkActive="active">History</a>
           <a routerLink="/admin" routerLinkActive="active">Admin</a>
           <a routerLink="/login" routerLinkActive="active" *ngIf="!isAuthed">Login</a>
+          <button class="btn btn-secondary" (click)="toggleTheme()">Toggle Theme</button>
           <button class="btn btn-secondary" (click)="logout()" *ngIf="isAuthed">Logout</button>
         </div>
       </div>
@@ -31,5 +32,10 @@ export class AppComponent {
     this.auth.isAuthenticated$.subscribe(v => this.isAuthed = v);
   }
   logout() { this.auth.logout(); }
+  toggleTheme() {
+    const root = document.documentElement;
+    const isLight = root.getAttribute('data-theme') === 'light';
+    root.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  }
 }
 
