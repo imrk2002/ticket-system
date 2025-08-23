@@ -1,0 +1,90 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ticket_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - backend
+
+  bus-schedule:
+    build: ./services/bus_schedule_service
+    container_name: bus_schedule_service
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: schedule_user
+      DB_PASSWORD: schedule_password
+      DB_NAME: schedule_db
+      PORT: "5001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "5001:5001"
+    networks:
+      - backend
+
+  reservation:
+    build: ./services/reservation_service
+    container_name: reservation_service
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: reservation_user
+      DB_PASSWORD: reservation_password
+      DB_NAME: reservation_db
+      PORT: "5002"
+      SCHEDULE_SERVICE_URL: http://bus-schedule:5001
+      JWT_SECRET: change_me_please
+    depends_on:
+      mysql:
+        condition: service_healthy
+      bus-schedule:
+        condition: service_started
+    ports:
+      - "5002:5002"
+    networks:
+      - backend
+
+  frontend:
+    build: ./frontend
+    container_name: ticket_frontend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      bus-schedule:
+        condition: service_started
+      reservation:
+        condition: service_started
+    ports:
+      - "4200:80"
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+
