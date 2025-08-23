@@ -1,19 +1,35 @@
 import { Component } from '@angular/core';
+import { AuthService } from './auth.service';
 
 @Component({
   selector: 'app-root',
   template: `
-    <div class="container">
-      <h1>Bus Ticket Reservation</h1>
-      <nav class="row">
-        <a routerLink="/" routerLinkActive="active">Search</a>
-        <a routerLink="/history" routerLinkActive="active">History</a>
-        <a routerLink="/admin" routerLinkActive="active">Admin</a>
-        <a routerLink="/login" routerLinkActive="active">Login</a>
-      </nav>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="brand">
+          <div class="brand-badge"></div>
+          <div>Bus Ticket Reservation</div>
+        </div>
+        <div class="nav-links">
+          <a routerLink="/" routerLinkActive="active">Search</a>
+          <a routerLink="/history" routerLinkActive="active">History</a>
+          <a routerLink="/admin" routerLinkActive="active">Admin</a>
+          <a routerLink="/login" routerLinkActive="active" *ngIf="!isAuthed">Login</a>
+          <button class="btn btn-secondary" (click)="logout()" *ngIf="isAuthed">Logout</button>
+        </div>
+      </div>
+    </div>
+    <div class="page">
       <router-outlet></router-outlet>
     </div>
   `,
 })
-export class AppComponent {}
+export class AppComponent {
+  isAuthed = false;
+  constructor(private auth: AuthService) {
+    this.isAuthed = !!this.auth.getToken();
+    this.auth.isAuthenticated$.subscribe(v => this.isAuthed = v);
+  }
+  logout() { this.auth.logout(); }
+}
 

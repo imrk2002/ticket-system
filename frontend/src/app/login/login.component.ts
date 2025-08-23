@@ -5,20 +5,24 @@ import { AuthService } from '../auth.service';
 @Component({
   selector: 'app-login',
   template: `
-    <div class="card">
-      <h3>Login</h3>
-      <div class="row">
-        <div>
-          <label>Username</label>
-          <input [(ngModel)]="username" />
+    <div class="center">
+      <div class="card" style="max-width:460px; width:100%">
+        <h3>Sign in</h3>
+        <div class="grid cols-1 mt-12">
+          <div>
+            <label>Username</label>
+            <input [(ngModel)]="username" placeholder="admin or user" />
+          </div>
+          <div>
+            <label>Password</label>
+            <input type="password" [(ngModel)]="password" placeholder="••••••••" />
+          </div>
         </div>
-        <div>
-          <label>Password</label>
-          <input type="password" [(ngModel)]="password" />
+        <div class="mt-12">
+          <button class="btn btn-primary" (click)="login()">Login</button>
         </div>
+        <div *ngIf="error" class="mt-12" style="color:#fca5a5">{{error}}</div>
       </div>
-      <button (click)="login()">Login</button>
-      <div *ngIf="error" style="color:red;margin-top:8px">{{error}}</div>
     </div>
   `,
 })

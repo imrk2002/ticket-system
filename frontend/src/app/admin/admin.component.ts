@@ -5,9 +5,13 @@ import { AuthService } from '../auth.service';
   selector: 'app-admin',
   template: `
     <div class="card">
-      <h3>Admin Dashboard</h3>
-      <p>Welcome, admin. This is a placeholder for admin features.</p>
-      <button (click)="logout()">Logout</button>
+      <div class="toolbar">
+        <h3>Admin Dashboard</h3>
+        <div class="actions">
+          <button class="btn btn-secondary" (click)="logout()">Logout</button>
+        </div>
+      </div>
+      <p class="muted mt-12">Welcome, admin. Use this area to manage routes, trips, and reservations in the future.</p>
     </div>
   `,
 })

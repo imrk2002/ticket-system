@@ -6,7 +6,14 @@ import { ApiService } from '../api.service';
   selector: 'app-search',
   template: `
     <div class="card">
-      <div class="row">
+      <div class="toolbar">
+        <h3>Search Trips</h3>
+        <div class="actions">
+          <button class="btn btn-secondary" (click)="reset()">Reset</button>
+          <button class="btn btn-primary" (click)="search()">Search</button>
+        </div>
+      </div>
+      <div class="grid cols-3 mt-12">
         <div>
           <label>Origin</label>
           <input [(ngModel)]="origin" placeholder="City A" />
@@ -20,21 +27,32 @@ import { ApiService } from '../api.service';
           <input type="date" [(ngModel)]="date" />
         </div>
       </div>
-      <button (click)="search()">Search</button>
-      <div *ngIf="error" style="color:red;margin-top:8px">{{error}}</div>
+      <div *ngIf="error" class="mt-12" style="color:#fca5a5">{{error}}</div>
     </div>
 
-    <div *ngFor="let t of trips" class="card">
-      <div class="row">
-        <div>
-          <div><b>{{t.route.origin}} → {{t.route.destination}}</b></div>
-          <div>{{t.departure_time}}</div>
-        </div>
-        <div>
-          <div>Seats: {{t.seats_available}} / {{t.seats_total}}</div>
-          <button (click)="book(t.id)">Book</button>
-        </div>
-      </div>
+    <div class="card" *ngIf="trips?.length">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Route</th>
+            <th>Departure</th>
+            <th>Seats</th>
+            <th style="width:1%"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of trips">
+            <td><b>{{t.route.origin}} → {{t.route.destination}}</b></td>
+            <td>{{t.departure_time | date:'medium'}}</td>
+            <td>
+              <span class="badge" [class.success]="t.seats_available>0" [class.danger]="t.seats_available===0">
+                {{t.seats_available}} / {{t.seats_total}}
+              </span>
+            </td>
+            <td><button class="btn btn-primary" (click)="book(t.id)">Book</button></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   `,
 })

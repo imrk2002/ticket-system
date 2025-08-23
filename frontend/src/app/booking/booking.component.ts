@@ -6,8 +6,13 @@ import { ApiService } from '../api.service';
   selector: 'app-booking',
   template: `
     <div class="card">
-      <h3>Book Trip #{{tripId}}</h3>
-      <div class="row">
+      <div class="toolbar">
+        <h3>Book Trip #{{tripId}}</h3>
+        <div class="actions">
+          <button class="btn btn-primary" (click)="book()">Confirm Booking</button>
+        </div>
+      </div>
+      <div class="grid cols-2 mt-12">
         <div>
           <label>Passenger Name</label>
           <input [(ngModel)]="passenger" />
@@ -17,8 +22,7 @@ import { ApiService } from '../api.service';
           <input type="number" [(ngModel)]="seats" min="1" />
         </div>
       </div>
-      <button (click)="book()">Confirm Booking</button>
-      <div *ngIf="error" style="color:red">{{error}}</div>
+      <div *ngIf="error" class="mt-12" style="color:#fca5a5">{{error}}</div>
     </div>
   `,
 })
