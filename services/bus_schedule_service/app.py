@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime, date
 from typing import Any, Dict
 
@@ -7,6 +8,7 @@ from flask_cors import CORS
 from sqlalchemy import and_
 
 from models import db, Route, Trip
+from sqlalchemy import text
 
 
 def create_app() -> Flask:
@@ -27,6 +29,7 @@ def create_app() -> Flask:
     db.init_app(app)
 
     with app.app_context():
+        wait_for_db()
         db.create_all()
         seed_if_empty()
 
@@ -53,7 +56,11 @@ def seed_if_empty() -> None:
 def register_routes(app: Flask) -> None:
     @app.get("/health")
     def health() -> Any:
-        return jsonify({"status": "ok"})
+        try:
+            db.session.execute(text("SELECT 1"))
+            return jsonify({"status": "ok"})
+        except Exception as exc:
+            return jsonify({"status": "degraded", "error": str(exc)}), 500
 
     @app.post("/routes")
     def create_route() -> Any:
@@ -213,4 +220,15 @@ if __name__ == "__main__":
     app = create_app()
     port = int(os.environ.get("PORT", "5001"))
     app.run(host="0.0.0.0", port=port)
+
+
+def wait_for_db(retries: int = 30, delay_seconds: float = 2.0) -> None:
+    for attempt in range(1, retries + 1):
+        try:
+            db.session.execute(text("SELECT 1"))
+            return
+        except Exception:
+            time.sleep(delay_seconds)
+    # last try: raise to let container restart
+    db.session.execute(text("SELECT 1"))
 
