@@ -17,7 +17,7 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [AppComponent, SearchComponent, BookingComponent, HistoryComponent],
-  imports: [BrowserModule, FormsModule, HttpClientModule, RouterModule.forRoot(routes)],
+  imports: [BrowserModule, FormsModule, HttpClientModule, RouterModule.forRoot(routes, { useHash: true })],
   providers: [],
   bootstrap: [AppComponent],
 })
