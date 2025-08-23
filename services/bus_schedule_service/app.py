@@ -11,6 +11,17 @@ from models import db, Route, Trip
 from sqlalchemy import text
 
 
+def wait_for_db(retries: int = 30, delay_seconds: float = 2.0) -> None:
+    for attempt in range(1, retries + 1):
+        try:
+            db.session.execute(text("SELECT 1"))
+            return
+        except Exception:
+            time.sleep(delay_seconds)
+    # last try: raise to let container restart
+    db.session.execute(text("SELECT 1"))
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -220,15 +231,4 @@ if __name__ == "__main__":
     app = create_app()
     port = int(os.environ.get("PORT", "5001"))
     app.run(host="0.0.0.0", port=port)
-
-
-def wait_for_db(retries: int = 30, delay_seconds: float = 2.0) -> None:
-    for attempt in range(1, retries + 1):
-        try:
-            db.session.execute(text("SELECT 1"))
-            return
-        except Exception:
-            time.sleep(delay_seconds)
-    # last try: raise to let container restart
-    db.session.execute(text("SELECT 1"))
 
