@@ -31,3 +31,10 @@ Notes
 
 Deployment
 - See DEPLOYMENT.md for step-by-step deployment (Docker Compose and bare-metal).
+
+Authentication
+- Reservation service provides `/auth/login` returning JWT.
+- Default credentials (dev):
+  - Admin: username `admin`, password `Admin@123`
+  - User: username `user`, password `User@123`
+  - Change `JWT_SECRET` and rotate passwords for production.
