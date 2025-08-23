@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import requests
 from flask import Flask, jsonify, request
@@ -45,7 +45,7 @@ def seed_reservations() -> None:
         trips = q.json() if q.status_code == 200 else []
         for t in trips[:2]:
             rq.post(f"{schedule_base}/trips/{t['id']}/allocate", json={"count": 2}, timeout=5)
-            r = Reservation(trip_id=t['id'], passenger_name=f"Demo User {randint(100,999)}", seats_booked=2, status="BOOKED")
+            r = Reservation(trip_id=t['id'], passenger_name=f"Demo User {randint(100,999)}", seats_booked=2, status="BOOKED", booked_by="user")
             db.session.add(r)
         db.session.commit()
     except Exception:
@@ -72,6 +72,12 @@ def create_app() -> Flask:
     with app.app_context():
         wait_for_db()
         db.create_all()
+        # Ensure booked_by column exists (safe guard for existing DBs)
+        try:
+            db.session.execute(text("ALTER TABLE reservations ADD COLUMN IF NOT EXISTS booked_by VARCHAR(80) NULL"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
         seed_users()
         seed_reservations()
 
@@ -112,10 +118,15 @@ def register_routes(app: Flask) -> None:
 
     @app.post("/reservations")
     def create_reservation() -> Any:
+        user = get_current_user()
+        if user is None:
+            return jsonify({"error": "unauthorized"}), 401
+        username, _role = user
+
         data = request.get_json(force=True) or {}
         try:
             trip_id = int(data.get("trip_id"))
-            passenger_name = str(data.get("passenger_name"))
+            passenger_name = str(data.get("passenger_name")) or username
             seats = int(data.get("seats", 1))
         except Exception:
             return jsonify({"error": "trip_id, passenger_name, seats required"}), 400
@@ -146,6 +157,7 @@ def register_routes(app: Flask) -> None:
             passenger_name=passenger_name,
             seats_booked=seats,
             status="BOOKED",
+            booked_by=username,
         )
         db.session.add(reservation)
         db.session.commit()
@@ -153,9 +165,17 @@ def register_routes(app: Flask) -> None:
 
     @app.post("/reservations/<int:reservation_id>/cancel")
     def cancel_reservation(reservation_id: int) -> Any:
+        user = get_current_user()
+        if user is None:
+            return jsonify({"error": "unauthorized"}), 401
+        username, role = user
+
         reservation = Reservation.query.get(reservation_id)
         if reservation is None:
             return jsonify({"error": "reservation_not_found"}), 404
+        # Non-admins can only cancel their own bookings
+        if role != "ADMIN" and reservation.booked_by != username:
+            return jsonify({"error": "forbidden"}), 403
         if reservation.status == "CANCELLED":
             return jsonify(serialize_reservation(reservation))
 
@@ -177,15 +197,40 @@ def register_routes(app: Flask) -> None:
 
     @app.get("/reservations")
     def list_reservations() -> Any:
-        items = Reservation.query.order_by(Reservation.id.desc()).all()
+        user = get_current_user()
+        if user is None:
+            return jsonify({"error": "unauthorized"}), 401
+        username, role = user
+        query = Reservation.query
+        if role != "ADMIN":
+            query = query.filter(Reservation.booked_by == username)
+        items = query.order_by(Reservation.id.desc()).all()
         return jsonify([serialize_reservation(r) for r in items])
 
     @app.get("/reservations/<int:reservation_id>")
     def get_reservation(reservation_id: int) -> Any:
+        user = get_current_user()
+        if user is None:
+            return jsonify({"error": "unauthorized"}), 401
+        username, role = user
         reservation = Reservation.query.get(reservation_id)
         if reservation is None:
             return jsonify({"error": "reservation_not_found"}), 404
+        if role != "ADMIN" and reservation.booked_by != username:
+            return jsonify({"error": "forbidden"}), 403
         return jsonify(serialize_reservation(reservation))
+
+    def get_current_user() -> Optional[Tuple[str, str]]:
+        import jwt
+        auth = request.headers.get("Authorization", "")
+        if not auth.startswith("Bearer "):
+            return None
+        token = auth.split(" ", 1)[1].strip()
+        try:
+            payload = jwt.decode(token, app.config["JWT_SECRET"], algorithms=["HS256"])
+            return str(payload.get("sub")), str(payload.get("role"))
+        except Exception:
+            return None
 
 
 def serialize_reservation(r: Reservation) -> Dict[str, Any]:
@@ -195,6 +240,7 @@ def serialize_reservation(r: Reservation) -> Dict[str, Any]:
         "passenger_name": r.passenger_name,
         "seats_booked": r.seats_booked,
         "status": r.status,
+        "booked_by": r.booked_by,
         "created_at": r.created_at.isoformat(),
     }
 

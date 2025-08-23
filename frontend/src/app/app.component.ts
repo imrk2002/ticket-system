@@ -31,7 +31,7 @@ export class AppComponent {
     this.isAuthed = !!this.auth.getToken();
     this.auth.isAuthenticated$.subscribe(v => this.isAuthed = v);
   }
-  logout() { this.auth.logout(); }
+  logout() { this.auth.logout(); location.hash = '#/'; }
   toggleTheme() {
     const root = document.documentElement;
     const isLight = root.getAttribute('data-theme') === 'light';

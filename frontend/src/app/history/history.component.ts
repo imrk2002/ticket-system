@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { AuthService } from '../auth.service';
 import { ApiService } from '../api.service';
 
 @Component({
@@ -16,7 +17,7 @@ import { ApiService } from '../api.service';
       <table class="table">
         <thead>
           <tr>
-            <th>ID</th><th>Trip</th><th>Passenger</th><th>Seats</th><th>Status</th><th style="width:1%"></th>
+            <th>ID</th><th>Trip</th><th>Passenger</th><th>Seats</th><th>Status</th><th *ngIf="isAdmin">Booked By</th><th style="width:1%"></th>
           </tr>
         </thead>
         <tbody>
@@ -28,6 +29,7 @@ import { ApiService } from '../api.service';
             <td>
               <span class="badge" [class.success]="r.status==='BOOKED'" [class.warn]="r.status!=='BOOKED'">{{r.status}}</span>
             </td>
+            <td *ngIf="isAdmin">{{r.booked_by || '-'}}</td>
             <td><button class="btn btn-danger" (click)="cancel(r.id)" [disabled]="r.status==='CANCELLED'">Cancel</button></td>
           </tr>
         </tbody>
@@ -37,7 +39,8 @@ import { ApiService } from '../api.service';
 })
 export class HistoryComponent {
   reservations: any[] = [];
-  constructor(private api: ApiService) { this.refresh(); }
+  isAdmin = false;
+  constructor(private api: ApiService, private auth: AuthService) { this.isAdmin = this.auth.getRole() === 'ADMIN'; this.refresh(); }
 
   refresh() { this.api.listReservations().subscribe(res => this.reservations = res); }
   cancel(id: number) { this.api.cancel(id).subscribe(() => this.refresh()); }
