@@ -21,6 +21,7 @@ import { ApiService } from '../api.service';
         </div>
       </div>
       <button (click)="search()">Search</button>
+      <div *ngIf="error" style="color:red;margin-top:8px">{{error}}</div>
     </div>
 
     <div *ngFor="let t of trips" class="card">
@@ -42,11 +43,17 @@ export class SearchComponent {
   destination = 'City B';
   date = new Date().toISOString().substring(0, 10);
   trips: any[] = [];
+  error = '';
 
   constructor(private api: ApiService, private router: Router) {}
 
   search() {
-    this.api.searchTrips(this.origin, this.destination, this.date).subscribe((res) => (this.trips = res));
+    this.error = '';
+    this.trips = [];
+    this.api.searchTrips(this.origin, this.destination, this.date).subscribe({
+      next: (res) => (this.trips = res || []),
+      error: (err) => (this.error = err?.error?.error || 'Search failed'),
+    });
   }
 
   book(tripId: number) {

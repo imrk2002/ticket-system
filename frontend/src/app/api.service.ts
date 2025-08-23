@@ -4,9 +4,11 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  // Point these at docker compose host ports
-  scheduleBase = 'http://localhost:5001';
-  reservationBase = 'http://localhost:5002';
+  // Auto-target same host as frontend (works for remote hosts too)
+  private protocol = window.location.protocol;
+  private host = window.location.hostname;
+  scheduleBase = `${this.protocol}//${this.host}:5001`;
+  reservationBase = `${this.protocol}//${this.host}:5002`;
 
   constructor(private http: HttpClient) {}
 
