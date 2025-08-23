@@ -32,6 +32,26 @@ def seed_users() -> None:
     db.session.commit()
 
 
+def seed_reservations() -> None:
+    import requests as rq
+    from random import randint
+    from datetime import date as _d
+
+    if Reservation.query.count() > 0:
+        return
+    schedule_base = os.environ.get("SCHEDULE_SERVICE_URL", "http://localhost:5001")
+    try:
+        q = rq.get(f"{schedule_base}/trips/search", params={"origin": "City A", "destination": "City B", "date": _d.today().isoformat()}, timeout=5)
+        trips = q.json() if q.status_code == 200 else []
+        for t in trips[:2]:
+            rq.post(f"{schedule_base}/trips/{t['id']}/allocate", json={"count": 2}, timeout=5)
+            r = Reservation(trip_id=t['id'], passenger_name=f"Demo User {randint(100,999)}", seats_booked=2, status="BOOKED")
+            db.session.add(r)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -53,6 +73,7 @@ def create_app() -> Flask:
         wait_for_db()
         db.create_all()
         seed_users()
+        seed_reservations()
 
     register_routes(app)
     return app

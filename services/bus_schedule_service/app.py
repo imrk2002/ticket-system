@@ -1,6 +1,6 @@
 import os
 import time
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Any, Dict
 
 from flask import Flask, jsonify, request
@@ -49,19 +49,27 @@ def create_app() -> Flask:
 
 
 def seed_if_empty() -> None:
-    if Route.query.count() == 0:
-        route = Route(origin="City A", destination="City B")
+    if Route.query.count() > 0:
+        return
+    route_pairs = [
+        ("City A", "City B"),
+        ("City A", "City C"),
+        ("City B", "City C"),
+    ]
+    now = datetime.utcnow().replace(minute=0, second=0, microsecond=0)
+    for origin, destination in route_pairs:
+        route = Route(origin=origin, destination=destination)
         db.session.add(route)
         db.session.flush()
-        now = datetime.utcnow()
-        trip = Trip(
-            route_id=route.id,
-            departure_time=now,
-            seats_total=40,
-            seats_available=40,
-        )
-        db.session.add(trip)
-        db.session.commit()
+        for h in [2, 6, 10]:
+            trip = Trip(
+                route_id=route.id,
+                departure_time=now + timedelta(hours=h),
+                seats_total=40,
+                seats_available=40,
+            )
+            db.session.add(trip)
+    db.session.commit()
 
 
 def register_routes(app: Flask) -> None:
